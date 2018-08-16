@@ -1,32 +1,12 @@
 <?php
 include "vendor/autoload.php";
-use Slim\Http\Request;
-use Slim\Http\Response;
+
+if (file_exists("config.php")) {
+    include "config.php";
+}
 
 $whitelist = array('127.0.0.1', '::1');
 define("APP_DEBUG", in_array($_SERVER['REMOTE_ADDR'], $whitelist));
-
-
-// WARNING: Protect this file.
-$hosts = [];
-$hosts["sao"] = [
-    "stages" => [
-        "production" => [
-            "deploy_path" => "/home/huchimco/api.huchim.com/sao",
-            "users" => [
-                "huchim"
-            ]
-        ],
-        "development" => [
-            "deploy_path" => "H:\\git_projects3\\avance-obra\\api"
-        ]
-    ],
-    "exclude" => [
-        ".gitignore",
-        ".git",
-        ".vscode"
-    ]
-];
 
 // Crear la aplicación.
 $app = new \Slim\App();
@@ -43,6 +23,21 @@ $app->add(function ($request, $response, $next) {
     
     return $response;
 });
+
+$app->get("/", Huchim\Controller::getAction("help"));
+$app->get("/{host}/{stage}/lock/{timestamp}", Huchim\Controller::getAction("lock"));
+$app->get("/{host}/{stage}/timestamps", Huchim\Controller::getAction("timestamps"));
+$app->get("/{host}/{stage}/unlock/{timestamp}", Huchim\Controller::getAction("unlock"));
+$app->get("/{host}/{stage}/snapshot/{lock}[/{timestamp}]",  Huchim\Controller::getAction("snapshot"));
+$app->get("/{host}/{stage}/diff/{timestamp}/{to}",  Huchim\Controller::getAction("diff"));
+$app->post("/{host}/{stage}/upload/{timestamp}", Huchim\Controller::getAction("upload"));
+
+$app->run();
+
+
+// $app->get("/", Huchim\Controller::class . ":help");
+
+/*
 
 // Bloquea el proceso para evitar que haya cambios durante la implementación.
 $app->get("/{host}/{stage}/lock/{timestamp}", function($request, $response, $args) use ($hosts) {
@@ -275,15 +270,14 @@ function listFolderFiles($dir, $excludes = [], $baseDir = "", $separator = DIREC
         }
         
         $currentItem = $dir.$separator.$ff;
+        $isDirectory = is_dir($currentItem);
 
-        if(is_dir($currentItem)) {
+        if ($isDirectory) {
             $directoryContent = listFolderFiles($currentItem, $excludes, $baseDir);
             
             foreach ($directoryContent as $file) {
                 $files[] = $file;
             }
-
-            // $files = array_merge($files, $directoryContent);
         } else {
             $ft = filemtime($currentItem);
             $filename = str_replace($baseDir, "", $currentItem);
@@ -320,3 +314,5 @@ function getRequestCode($hostname, $stage, $client, $hosts) {
     
     return 200;
 }
+ * 
+ */

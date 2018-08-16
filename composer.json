@@ -1,4 +1,9 @@
 {
+    "autoload": {
+        "psr-4": {
+            "Huchim\\": "src"
+        }
+    },
     "require": {
         "slim/slim": "^3.10"
     }
