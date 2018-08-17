@@ -155,7 +155,7 @@ class Controller {
         $timestamp = trim($args["timestamp"]);
         
         // Recuperar la información del despliegue.
-        $stageInstance = $this->pipelines->getByStageName($pipeName, $stageName);
+        $stageInstance = $this->getPipelines()->getByStageName($pipeName, $stageName);
         
         if ($stageInstance === null) {
             return $response->withStatus(404);

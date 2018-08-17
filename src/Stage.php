@@ -32,6 +32,15 @@ class Stage {
         }
         
         \rsort($timestamps, \SORT_NUMERIC);
+        
+        if (count($timestamps) === 0) {
+            $indexFile = $this->getSnapshotIndexFile(0);
+            
+            if (!file_exists($indexFile)) {
+                // Hay que inicializar esta cosa.
+                $this->snapshot(0, "initial commit");
+            }
+        }
 
         return $timestamps;
     }
