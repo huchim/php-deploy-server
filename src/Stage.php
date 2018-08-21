@@ -15,9 +15,13 @@ class Stage {
         $this->setName($name);
     }
     
+    public function diffFS($source, $target) {
+        return $source->compare($target);
+    }
+    
     public function diff($greaterThan, $equalOrLessThan) {
-        $source = $this->getSnapshotEqualThan($greaterThan);
-        $target = $this->getSnapshotEqualThan($equalOrLessThan);
+        $source = is_string($greaterThan) ? $this->getSnapshotEqualThan($greaterThan) : $greaterThan;
+        $target = is_string($equalOrLessThan) ? $this->getSnapshotEqualThan($equalOrLessThan) : $equalOrLessThan;
 
         return $source->compare($target);
     }
@@ -32,15 +36,6 @@ class Stage {
         }
         
         \rsort($timestamps, \SORT_NUMERIC);
-        
-        if (count($timestamps) === 0) {
-            $indexFile = $this->getSnapshotIndexFile(0);
-            
-            if (!file_exists($indexFile)) {
-                // Hay que inicializar esta cosa.
-                $this->snapshot(0, "initial commit");
-            }
-        }
 
         return $timestamps;
     }
@@ -57,6 +52,11 @@ class Stage {
         return $fileList;
     }
     
+    /**
+     * 
+     * @param int $timestamp
+     * @return \Huchim\FileList
+     */
     public function getSnapshotEqualThan($timestamp) {
         $indexFile = $this->getSnapshotIndexFile($timestamp);
         $fileList = new FileList();
@@ -64,6 +64,11 @@ class Stage {
         if (file_exists($indexFile)) {
             // Cargo los archivos desde el archivo.
             $fileList->loadFromFile($indexFile);
+        }
+        
+        if ($timestamp === "current") {
+            $fileList->setDirectory($this->getDeployPath());
+            $fileList->loadFromCurrent($this->pipeline->getExcludes());
         }
 
         return $fileList;
@@ -148,6 +153,20 @@ class Stage {
     
     public function getDeployPath() {
         return $this->config["deploy_path"];
+    }
+    
+    public function fileWIthDeployPath($file) {
+        $deployPath = $this->getDeployPath();
+        
+        if (substr($deployPath, strlen($deployPath) -1) === DIRECTORY_SEPARATOR) {
+            $deployPath = substr($deployPath, 0, strlen($deployPath) - 1);
+        }
+        
+        if (substr($file, 0, 1) === DIRECTORY_SEPARATOR) {
+            $file = substr($file, 1);
+        }
+        
+        return $deployPath . DIRECTORY_SEPARATOR . $file;
     }
     
     public function addUser($user) {
