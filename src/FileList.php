@@ -9,40 +9,94 @@ class FileList {
     }
     
     public function compare(FileList $nextList) {
-        $nextFileList = $nextList->getFileList();        
-        $sourceList = $this->currentFileList;
-        $diff = [];
+        try {
+            $nextFileList = $nextList->getFileList();
+        } catch (\Exception $ex) {
+            throw new \Exception("No se pudo recuperar la lista a comparar", 0, $ex);
+        }
+
+        try {
+            $sourceList = $this->getFileList();
+        } catch (\Exception $ex) {
+            throw new \Exception("No se pudo recuperar la lista inicial", 0, $ex);
+        }
+        
+        $differenceList = [];
+        $differenceHashMap = [];
 
         // Buscar los NUEVOS en target que no están en source
         foreach ($nextFileList as $fileKey => $fileValue) {
+            $method = "+";
+            $action = "CREATE";
+            $currentCheckSum = $fileValue["CheckSum"];
+            
             if (array_key_exists($fileKey, $sourceList)) {
-                continue;
+                $compareCheckSum = $sourceList[$fileKey]["CheckSum"];
+                
+                if ($currentCheckSum === $compareCheckSum) {
+                    continue;
+                }
+
+                // Ambos archivos están en el mismo lado, pero con contenidos distintos.
+                $method = "*";
+                $action = "UPDATE";
             }
 
-            $diff[] = "+ " . $fileValue["name"];
+            $differenceHashMap[] = implode(" ", [$method, $fileValue["Name"]]);
+            $differenceList[] = implode(" ", [
+                $method,
+                $fileValue["Name"],
+                $action
+            ]);
         }
 
         // Buscar todos los QUE NO EXISTEN en target.
         // Son los que han cambiado o la fecha o el nombre.
         foreach ($sourceList as $fileKey => $fileValue) {
+            $method = "+";
+            $action = "DELETE";
+
             if (array_key_exists($fileKey, $nextFileList)) {
                 continue;
             }
 
             // Si el mismo archivo ya existe en el arreglo, se considera entonces
             // que fue modificado.
-            $k = "+ " . $fileValue["name"];
+            $k = "+ " . $fileValue["Name"];
 
-            if (!in_array($k, $diff)) {
-                $diff[] = "- " . $fileValue["name"];
+            if (!in_array($k, $differenceHashMap)) {
+                $differenceHashMap[] = implode(" ", [$method, $fileValue["Name"]]);
+                $differenceList[] = implode(" ", [
+                    $method,
+                    $fileValue["Name"],
+                    $action
+                ]);
             }
         }
 
-        return $diff;
+        return $differenceList;
     }
     
     public function getFileList() {
-        return $this->currentFileList;
+        if (!isset($this->currentFileList["files"])) {
+            throw new \Exception("No se ha definido la lista de archivos. Utilice setFileList primero.");
+        }
+        
+        $fl = [];
+        
+        foreach ($this->currentFileList["files"] as $f) {
+            $fl[$f["Name"]] = $f;
+        }
+
+        return $fl;
+    }
+    
+    public function setFileList($fileList) {
+        $this->currentFileList = $fileList;
+    }
+    
+    public function loadFromArray($fileList) {
+        $this->currentFileList = $fileList;
     }
             
     public function loadFromFile($historyFile) {
@@ -60,7 +114,7 @@ class FileList {
             throw new \Exception("Se requiere un directorio inicial.");
         }
 
-        $this->currentFileList = $this->createRecursiveFileList($this->directoryBase, $excludeList);
+        $this->currentFileList["files"] = $this->createRecursiveFileList($this->directoryBase, $excludeList, $this->directoryBase);
     }
     
     public function setDirectory($directoryPath) {
@@ -88,12 +142,14 @@ class FileList {
                     $files[] = $file;
                 }
             } else {
-                $ft = filemtime($currentItem);
+                // $ft = filemtime($currentItem);
                 $filename = str_replace($baseDir, "", $currentItem);
-                $fileKey = md5($filename . "::" . $ft);
+                $fileKey = md5_file($currentItem) .  "::" . md5($filename);
     
-                $files[$fileKey] = [
-                    "name" => $filename
+                $files[] = [
+                    "Name" => $filename,
+                    "CheckSum" => $fileKey,
+                    "Action" => "NONE"
                 ];
             }
         }

@@ -6,6 +6,102 @@ use Slim\Http\Request;
 
 class Controller {
     private $pipelines = "";
+    
+    public function deploy(Request $request, Response $response, $args) {
+        $pipeName = trim($args["host"]);
+        $stageName = trim($args["stage"]);        
+        $timestamp = trim($args["timestamp"]);
+
+        // Recuperar la información del despliegue.
+        $stageInstance = $this->getPipelines()->getByStageName($pipeName, $stageName);
+        
+        if ($stageInstance === null) {
+            return $response->withStatus(404);
+        }
+        
+        if ($stageInstance->requireLogin()) {
+            $usr = $request->getServerParam("PHP_AUTH_USER", "");
+
+            if ($stageInstance->authorize($usr)) {
+                return $response->withStatus(401);
+            }
+        }
+        
+        if ($stageInstance->isLocked($timestamp)) {
+            // La operación no se puede ejecutar porque existe un bloqueo por alguna operación
+            // diferente a la actual.
+            return $response->withStatus(400);
+        }
+        
+        $uploadedFiles = $request->getUploadedFiles();
+
+        if (count($uploadedFiles) === 0) {
+            return $response->withStatus(400);
+        }
+        
+        // "file" es el nombre, pero no debería asumirlo.
+        $fileInputKey = array_keys($uploadedFiles)[0];
+        $firstFileUpload = $uploadedFiles[$fileInputKey];
+        
+        // read json file.
+        $firstFileUpload->moveTo($stageInstance->fileWIthDeployPath("{$timestamp}_deploy.zip"));
+        
+        return $response->withStatus(200);
+    }
+    
+    public function diff_post(Request $request, Response $response, $args) {
+        $pipeName = trim($args["host"]);
+        $stageName = trim($args["stage"]);        
+        $timestamp = trim($args["timestamp"]);
+
+        // Recuperar la información del despliegue.
+        $stageInstance = $this->getPipelines()->getByStageName($pipeName, $stageName);
+        
+        if ($stageInstance === null) {
+            return $response->withStatus(404);
+        }
+        
+        if ($stageInstance->requireLogin()) {
+            $usr = $request->getServerParam("PHP_AUTH_USER", "");
+
+            if ($stageInstance->authorize($usr)) {
+                return $response->withStatus(401);
+            }
+        }
+        
+        if ($stageInstance->isLocked($timestamp)) {
+            // La operación no se puede ejecutar porque existe un bloqueo por alguna operación
+            // diferente a la actual.
+            return $response->withStatus(400);
+        }
+        
+        $uploadedFiles = $request->getUploadedFiles();
+
+        if (count($uploadedFiles) === 0) {
+            return $response->withStatus(400);
+        }
+        
+        // "file" es el nombre, pero no debería asumirlo.
+        $fileInputKey = array_keys($uploadedFiles)[0];
+        $firstFileUpload = $uploadedFiles[$fileInputKey];
+        
+        // read json file.
+        $fileContent = $firstFileUpload->getStream()->getContents();
+        $jsonList = \json_decode($fileContent, true);
+
+        $clientFileList = new FileList();
+
+        $clientFileList->loadFromArray($jsonList);
+        
+        $m = implode("\n", $stageInstance->diff("current", $clientFileList));
+        
+        $response
+            ->withHeader("Content-Type", "text/plain")
+            ->getBody()
+            ->write($m);
+    
+        return $response;
+    }
 
     public function diff(Request $request, Response $response, $args) {
         $pipeName = trim($args["host"]);

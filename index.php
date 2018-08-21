@@ -9,7 +9,12 @@ $whitelist = array('127.0.0.1', '::1');
 define("APP_DEBUG", in_array($_SERVER['REMOTE_ADDR'], $whitelist));
 
 // Crear la aplicación.
-$app = new \Slim\App();
+$app = new \Slim\App([
+    "settings" => [
+        "displayErrorDetails" => APP_DEBUG,
+        "determineRouteBeforeAppMiddleware" => true
+    ]
+]);
 
 $app->add(function ($request, $response, $next) {    
     if (!APP_DEBUG) {
@@ -31,6 +36,8 @@ $app->get("/{host}/{stage}/unlock/{timestamp}", Huchim\Controller::getAction("un
 $app->get("/{host}/{stage}/snapshot/{lock}[/{timestamp}]",  Huchim\Controller::getAction("snapshot"));
 $app->get("/{host}/{stage}/diff/{timestamp}/{to}",  Huchim\Controller::getAction("diff"));
 $app->post("/{host}/{stage}/upload/{timestamp}", Huchim\Controller::getAction("upload"));
+$app->post("/{host}/{stage}/deploy/{timestamp}", Huchim\Controller::getAction("deploy"));
+$app->post("/{host}/{stage}/diff/{timestamp}", Huchim\Controller::getAction("diff_post"));
 
 $app->run();
 
