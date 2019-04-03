@@ -169,14 +169,32 @@ class Stage {
         return $deployPath . DIRECTORY_SEPARATOR . $file;
     }
     
-    public function addUser($user) {
-        $this->userList[] = $user;
+    public function addUser($user, $pwd) {
+        $this->userList[$user] = $pwd;
         
         return $this;
     }
 
-    public function authorize($userName) {
-        return in_array($userName, $this->userList);
+    public function authorize(\Psr\Http\Message\RequestInterface $request) {
+        $authHeader = $request->getHeader("Authorization");
+        
+        if (is_array($authHeader) && count($authHeader) === 0) {
+            return false;
+        }
+        
+        list ($authType, $authToken) = explode(" ", $authHeader[0]);
+
+        if ($authType !== "Basic") {
+            return false;
+        }
+
+        list ($username, $pwd) = explode(":", base64_decode($authToken));
+
+        if (!array_key_exists($username, $this->userList)) {
+            return false;
+        }
+
+        return $this->userList[$username] === $pwd;
     }
     
     public function requireLogin() {

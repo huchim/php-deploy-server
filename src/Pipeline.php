@@ -77,8 +77,8 @@ class Pipeline {
             $cl = new Stage($stage);
             $cl->setDeployPath($deployPath);
             
-            foreach ($users as $user) {
-                $cl->addUser($user);
+            foreach ($users as $userName => $pwd) {
+                $cl->addUser($userName, $pwd);
             }
         } else {
             $cl = $stage;

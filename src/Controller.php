@@ -20,9 +20,7 @@ class Controller {
         }
         
         if ($stageInstance->requireLogin()) {
-            $usr = $request->getServerParam("PHP_AUTH_USER", "");
-
-            if ($stageInstance->authorize($usr)) {
+            if (!$stageInstance->authorize($request)) {
                 return $response->withStatus(401);
             }
         }
@@ -62,9 +60,7 @@ class Controller {
         }
         
         if ($stageInstance->requireLogin()) {
-            $usr = $request->getServerParam("PHP_AUTH_USER", "");
-
-            if ($stageInstance->authorize($usr)) {
+            if (!$stageInstance->authorize($request)) {
                 return $response->withStatus(401);
             }
         }
@@ -117,9 +113,7 @@ class Controller {
         }
         
         if ($stageInstance->requireLogin()) {
-            $usr = $request->getServerParam("PHP_AUTH_USER", "");
-
-            if ($stageInstance->authorize($usr)) {
+            if (!$stageInstance->authorize($request)) {
                 return $response->withStatus(401);
             }
         }
@@ -152,9 +146,7 @@ class Controller {
         }
         
         if ($stageInstance->requireLogin()) {
-            $usr = $request->getServerParam("PHP_AUTH_USER", "");
-
-            if ($stageInstance->authorize($usr)) {
+            if (!$stageInstance->authorize($request)) {
                 return $response->withStatus(401);
             }
         }
@@ -185,9 +177,7 @@ class Controller {
         }
         
         if ($stageInstance->requireLogin()) {
-            $usr = $request->getServerParam("PHP_AUTH_USER", "");
-
-            if ($stageInstance->authorize($usr)) {
+            if (!$stageInstance->authorize($request)) {
                 return $response->withStatus(401);
             }
         }
@@ -216,9 +206,7 @@ class Controller {
         }
         
         if ($stageInstance->requireLogin()) {
-            $usr = $request->getServerParam("PHP_AUTH_USER", "");
-
-            if ($stageInstance->authorize($usr)) {
+            if (!$stageInstance->authorize($request)) {
                 return $response->withStatus(401);
             }
         }
@@ -258,9 +246,7 @@ class Controller {
         }
         
         if ($stageInstance->requireLogin()) {
-            $usr = $request->getServerParam("PHP_AUTH_USER", "");
-            
-            if ($stageInstance->authorize($usr)) {
+            if (!$stageInstance->authorize($request)) {
                 return $response->withStatus(401);
             }
         }
@@ -272,7 +258,7 @@ class Controller {
                 "status" => $results,
             ]);
     }
-    
+       
     public function unlock(Request $request, Response $response, $args) {
         $pipeName = trim($args["host"]);
         $stageName = trim($args["stage"]);
@@ -286,9 +272,7 @@ class Controller {
         }
         
         if ($stageInstance->requireLogin()) {
-            $usr = $request->getServerParam("PHP_AUTH_USER", "");
-            
-            if ($stageInstance->authorize($usr)) {
+            if (!$stageInstance->authorize($request)) {
                 return $response->withStatus(401);
             }
         }
