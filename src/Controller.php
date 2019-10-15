@@ -35,6 +35,7 @@ class Controller
             return $response->withStatus(400);
         }
 
+        /* @var $uploadedFiles \Psr\Http\Message\UploadedFileInterface[] */
         $uploadedFiles = $request->getUploadedFiles();
 
         if (count($uploadedFiles) === 0) {
@@ -46,13 +47,20 @@ class Controller
         $firstFileUpload = $uploadedFiles[$fileInputKey];
         $deployZipName = $stageInstance->fileWIthDeployPath("{$timestamp}_deploy.zip");
 
+        if ($firstFileUpload->getError() !== \UPLOAD_ERR_OK) {
+            return $response->withJson([
+                        "code" => (int) $firstFileUpload->getError(),
+                        "message" => "El archivo no pudo ser subido a la aplicación",
+                            ], 500);
+        }
+
         // read json file.
         try {
             $firstFileUpload->moveTo($deployZipName);
         } catch (\RuntimeException $ex) {
             return $response->withJson([
                         "code" => 0,
-                        "message" => sprintf("Error al subir el archivo %s", $deployZipName),
+                        "message" => sprintf("Error al subir el archivo %s (5s)", $deployZipName, $fileInputKey),
                         "inner" => [
                             "code" => $ex->getCode(),
                             "message" => $ex->getMessage(),
